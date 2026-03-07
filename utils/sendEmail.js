@@ -1,4 +1,5 @@
-const nodemailer = require("nodemailer");
+//const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 
 const sendEmail = async (email, otp) => {
 
@@ -25,4 +26,4 @@ const sendEmail = async (email, otp) => {
   await transporter.sendMail(mailOptions);
 };
 
-module.exports = sendEmail;
+export default sendEmail;

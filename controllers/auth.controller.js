@@ -1,17 +1,64 @@
-const User = require("../models/user");
-const Otp = require("../models/otpSchema");
+//const User = require("../models/user");
+import User from "../models/user.js";
+import Otp from "../models/otpSchema.js";
 
-const generateOTP = require("../utils/otp");
-const sendEmail = require("../utils/sendEmail");
+import generateOTP from "../utils/otp.js";
+import sendEmail from "../utils/sendEmail.js";  
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { email, z } from "zod";
+// const Otp = require("../models/otpSchema");
 
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+// const generateOTP = require("../utils/otp");
+// const sendEmail = require("../utils/sendEmail");
 
-exports.requestOtp = async (req, res) => {
+// const bcrypt = require("bcryptjs");
+// const jwt = require("jsonwebtoken");
+
+// const z = require("zod");
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6).max(100)
+});
+
+const requestOtpSchema = z.object({
+  email: z.string().email()
+});
+
+const generateAdminOtpSchema = z.object({
+  email: z.string().email(),
+  adminKey: z.string().min(6)
+});
+
+const verifyOtpSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  phone: z.string().min(10).max(15),
+  address: z.string().min(10).max(200),
+  password: z.string().min(6).max(100),
+  otp: z.string().length(6)
+});
+
+ const newpass = z.object({
+  email: z.string().email(),
+  otp: z.string().length(6),
+  newPassword: z.string().min(6).max(100)
+ });
+
+
+
+export const requestOtp = async (req, res) => {
 
   try {
 
     const { email } = req.body;
+    const { success, error } = requestOtpSchema.safeParse({ email });
+
+    if (!success) {
+      return res.status(400).json({
+        message: error.errors[0].message
+      });
+    }
 
     const existingUser = await User.findOne({ email });
 
@@ -23,10 +70,15 @@ exports.requestOtp = async (req, res) => {
 
     const otp = generateOTP();
 
-    await Otp.create({
+    const otpRecord = await Otp.create({
       email,
       otp
     });
+    console.log(otpRecord);
+
+
+
+   
 
     await sendEmail(email, otp);
 
@@ -44,27 +96,33 @@ exports.requestOtp = async (req, res) => {
 
 };
 
-exports.verifyOtp = async (req, res) => {
+export const verifyOtp = async (req, res) => {
 
   try {
 
     const { name, email, phone, address, password, otp } = req.body;
+    const { success, error } = verifyOtpSchema.safeParse({ name, email, phone, address, password, otp });
+    if (!success) {
+      return res.status(400).json({
+        message: error?.errors?.[0]?.message || "Validation error"
+      });
+    }
 
     // Find OTP record by email
-    const otpRecord = await Otp.findOne({ email });
-
-    if (!otpRecord) {
+    const user = await Otp.findOne({ email });
+    
+    if (!user) {
       return res.status(400).json({
         message: "OTP expired or not found"
       });
     }
-
     // Compare OTP
-    if (otpRecord.otp !== otp) {
+    if (user.otp !== otp) {
       return res.status(400).json({
         message: "Invalid OTP"
       });
     }
+    console.log("done");
 
     // Check if user already exists (safety check)
     const existingUser = await User.findOne({ email });
@@ -97,7 +155,7 @@ exports.verifyOtp = async (req, res) => {
     });
 
   } catch (error) {
-
+    console.log(error);
     res.status(500).json({
       message: error.message
     });
@@ -106,11 +164,18 @@ exports.verifyOtp = async (req, res) => {
 
 };
 
-exports.generateAdminOtp = async (req, res) => {
+export const generateAdminOtp = async (req, res) => {
 
   try {
 
     const { email, adminKey } = req.body;
+    const { success, error } = generateAdminOtpSchema.safeParse({ email, adminKey });
+
+    if (!success) {
+      return res.status(400).json({
+        message: error.errors[0].message
+      });
+    }
 
     // check admin key
     if (!adminKey || adminKey !== process.env.ADMIN_SECRET_KEY) {
@@ -157,11 +222,18 @@ exports.generateAdminOtp = async (req, res) => {
 
 };
 
-exports.verifyAdminOtp = async (req, res) => {
+export const verifyAdminOtp = async (req, res) => {
 
   try {
 
     const { name, email, phone, address, password, otp } = req.body;
+        const { success, error } = verifyOtpSchema.safeParse({ name, email, phone, address, password, otp });
+
+    if (!success) {
+      return res.status(400).json({
+        message: error.errors[0].message
+      });
+    }
 
     const otpRecord = await Otp.findOne({ email });
 
@@ -209,11 +281,18 @@ exports.verifyAdminOtp = async (req, res) => {
 
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
 
   try {
 
     const { email, password } = req.body;
+    const { success, error } = loginSchema.safeParse({ email, password });
+
+    if (!success) {
+      return res.status(400).json({
+        message: "Validation error"
+      });
+    }
 
     // check if user exists
     const user = await User.findOne({ email });
@@ -275,11 +354,18 @@ exports.login = async (req, res) => {
 
 
 
-exports.requestPasswordResetOtp = async (req, res) => {
+export const requestPasswordResetOtp = async (req, res) => {
 
   try {
 
     const { email } = req.body;
+        const { success, error } = requestOtpSchema.safeParse({ email });
+
+    if (!success) {
+      return res.status(400).json({
+        message: error.errors[0].message
+      });
+    }
 
     // check if user exists
     const user = await User.findOne({ email });
@@ -321,12 +407,20 @@ exports.requestPasswordResetOtp = async (req, res) => {
 
 
 
-exports.verifyPasswordResetOtp = async (req, res) => {
+export const verifyPasswordResetOtp = async (req, res) => {
 
   try {
 
     const { email, otp, newPassword } = req.body;
+    const { success, error } = newpass.safeParse({ email, otp, newPassword });
 
+    if (!success) {
+      return res.status(400).json({
+        message: error.errors[0].message
+      });
+    }
+
+    
     const otpRecord = await Otp.findOne({ email });
 
     if (!otpRecord) {
@@ -344,6 +438,15 @@ exports.verifyPasswordResetOtp = async (req, res) => {
 
     // hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+     const user = await User.findOne({email});
+     const oldpass = user.password;
+    if (await bcrypt.compare(newPassword, oldpass)) {
+      return res.status(400).json({
+        message: "New password cannot be the same as the old password"
+      });
+    }
+
 
     // update password
     await User.findOneAndUpdate(

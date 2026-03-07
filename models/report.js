@@ -1,4 +1,7 @@
-const mongoose = require("mongoose");
+//const mongoose = require("mongoose");
+//const { de } = require("zod/locales");
+import mongoose from "mongoose";
+import { de } from "zod/locales";
 
 const reportSchema = new mongoose.Schema({
 
@@ -63,4 +66,4 @@ const reportSchema = new mongoose.Schema({
 
 reportSchema.index({ location: "2dsphere" });
 
-module.exports = mongoose.model("Report", reportSchema);
+export default mongoose.model("Report", reportSchema);

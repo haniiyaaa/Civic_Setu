@@ -3,6 +3,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
+import authRoutes from "./routes/auth.routes.js";
+import reportRoutes from "./routes/report.routes.js";
+
+
 
 // Load env variables
 dotenv.config();
@@ -16,6 +20,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+app.use("/api/auth", authRoutes);
+app.use("/api/report", reportRoutes);
 
 // ================= Routes =================
 app.get("/", (req, res) => {

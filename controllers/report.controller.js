@@ -1,34 +1,52 @@
-const cloudinary = require("../config/cloudinary");
+import Report from "../models/report.js";
+import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import formatLocation from "../utils/formatLocation.js";
 
-const uploadImage = async (req, res) => {
+export const createReport = async (req, res) => {
 
   try {
 
-    if (!req.file) {
+    const { description, category, longitude, latitude, address } = req.body;
+
+    if (!description || !category || !longitude || !latitude) {
       return res.status(400).json({
-        message: "No file uploaded"
+        message: "Missing required fields"
       });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "civic_setu_reports"
+    // upload media files to Cloudinary
+    let mediaUrls = [];
+    console.log("FILES:", req.files);
+    console.log("BODY:", req.body);
+
+    if (req.files && req.files.length > 0) {
+      mediaUrls = await uploadToCloudinary(req.files);
+    }
+
+    // convert coordinates to GeoJSON
+    const location = formatLocation(longitude, latitude);
+
+    const report = await Report.create({
+      userId: req.user.id,
+      media: mediaUrls,
+      description,
+      category,
+      location,
+      address
     });
 
-    res.status(200).json({
-      message: "Image uploaded successfully",
-      imageUrl: result.secure_url,
-      public_id: result.public_id
+    res.status(201).json({
+      message: "Report submitted successfully",
+      report
     });
 
   } catch (error) {
+    console.error("Error creating report:", error);
 
     res.status(500).json({
-      message: "Upload failed",
-      error: error.message
+      message: "failed to upload report"
     });
 
   }
 
 };
-
-module.exports = { uploadImage };

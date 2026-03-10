@@ -1,5 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+import { configureCloudinary } from "./config/cloudinary.js";
+configureCloudinary();
+console.log("Cloud name:", process.env.CLOUDINARY_CLOUD_NAME);
 import cors from "cors";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
@@ -8,8 +12,7 @@ import reportRoutes from "./routes/report.routes.js";
 
 
 
-// Load env variables
-dotenv.config();
+
 
 // Connect database
 connectDB();

@@ -58,6 +58,12 @@ const reportSchema = new mongoose.Schema({
     default: "Pending"
   },
 
+  resolution: {
+  proofImage: String,
+  description: String,
+  resolvedAt: Date
+  },
+
   completionProof: {
     type: String
   }

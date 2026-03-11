@@ -9,6 +9,7 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import reportRoutes from "./routes/report.routes.js";
+import userProfileRoutes from "./routes/userProfile.routes.js";
 
 
 
@@ -25,6 +26,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 app.use("/api/report", reportRoutes);
+app.use("/api/userProfile", userProfileRoutes);
 
 // ================= Routes =================
 app.get("/", (req, res) => {

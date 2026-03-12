@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { apiClient } from '../../src/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { showToast } from '../../src/components/Toast';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -17,6 +18,9 @@ export default function ProfileScreen() {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState('');
   const [savingAddress, setSavingAddress] = useState(false);
+
+  // Custom confirm modal for password reset
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -38,42 +42,34 @@ export default function ProfileScreen() {
 
   const handleUpdateAddress = async () => {
     if (!newAddress) {
-      Alert.alert('Error', 'Address cannot be empty');
+      showToast({ type: 'error', title: 'Error', message: 'Address cannot be empty' });
       return;
     }
     try {
       setSavingAddress(true);
       await apiClient.put('/userProfile/updateAddress', { address: newAddress });
-      Alert.alert('Success', 'Address updated successfully');
+      showToast({ type: 'success', title: 'Address Updated', message: 'Your address has been saved.' });
       setProfile({ ...profile, address: newAddress });
       setIsUpdatingAddress(false);
     } catch {
-      Alert.alert('Error', 'Failed to update address');
+      showToast({ type: 'error', title: 'Error', message: 'Failed to update address' });
     } finally {
       setSavingAddress(false);
     }
   };
 
-  const handleResetPasswordRequest = async () => {
+  const handleResetPassword = async () => {
     try {
-      Alert.alert(
-        'Change Password',
-        'Would you like to receive an OTP on your email to reset your password?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Send OTP', 
-            onPress: async () => {
-              const userEmail = profile?.email || user?.email;
-              await apiClient.post('/userProfile/resetPassword/reqOtp', { email: userEmail });
-              Alert.alert('Success', 'OTP sent to your email.');
-              router.push(`/(auth)/reset-password?email=${encodeURIComponent(userEmail)}`);
-            }
-          }
-        ]
-      );
+      const userEmail = profile?.email || user?.email;
+      await apiClient.post('/userProfile/resetPassword/reqOtp', { email: userEmail });
+      showToast({ type: 'success', title: 'OTP Sent', message: 'Check your email for the code.' });
+      setShowPasswordModal(false);
+      setTimeout(() => {
+        router.push(`/(auth)/reset-password?email=${encodeURIComponent(userEmail)}`);
+      }, 1000);
     } catch {
-      Alert.alert('Error', 'Failed to request password reset OTP');
+      showToast({ type: 'error', title: 'Error', message: 'Failed to request password reset OTP' });
+      setShowPasswordModal(false);
     }
   };
 
@@ -140,7 +136,7 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
           
-          <TouchableOpacity style={styles.actionBtn} onPress={handleResetPasswordRequest}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => setShowPasswordModal(true)}>
             <Ionicons name="lock-closed-outline" size={20} color="#343a40" />
             <Text style={styles.actionText}>Change Password (OTP)</Text>
             <Ionicons name="chevron-forward" size={20} color="#ced4da" style={{marginLeft: 'auto'}} />
@@ -156,143 +152,68 @@ export default function ProfileScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Custom Password Reset Confirmation Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowPasswordModal(false)}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Change Password</Text>
+            <Text style={styles.confirmMessage}>
+              Would you like to receive an OTP on your email to reset your password?
+            </Text>
+            <View style={styles.confirmActions}>
+              <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setShowPasswordModal(false)}>
+                <Text style={styles.cancelModalText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmModalBtn} onPress={handleResetPassword}>
+                <Text style={styles.confirmModalText}>Send OTP</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 100, // accommodate tab bar
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 20,
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007bff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  nameText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 4,
-  },
-  emailText: {
-    fontSize: 16,
-    color: '#6c757d',
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  detailRowInfo: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  detailText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#495057',
-  },
-  detailTextFlow: {
-    fontSize: 16,
-    color: '#495057',
-    flex: 1,
-    paddingRight: 10,
-  },
-  addressDisplayRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  addressInput: {
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  addressActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 10,
-  },
-  cancelBtn: {
-    padding: 8,
-    marginRight: 10,
-  },
-  cancelBtnText: {
-    color: '#6c757d',
-    fontWeight: '600',
-  },
-  saveBtn: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    justifyContent: 'center',
-  },
-  saveBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f5',
-  },
-  logoutBtn: {
-    borderBottomWidth: 0,
-    marginTop: 8,
-  },
-  actionText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#343a40',
-    fontWeight: '500',
-  }
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { padding: 20, paddingBottom: 100 },
+  header: { alignItems: 'center', marginBottom: 30, marginTop: 20 },
+  avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  avatarText: { color: '#fff', fontSize: 32, fontWeight: 'bold' },
+  nameText: { fontSize: 24, fontWeight: 'bold', color: '#343a40', marginBottom: 4 },
+  emailText: { fontSize: 16, color: '#6c757d' },
+  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#343a40', marginBottom: 16 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  detailRowInfo: { flexDirection: 'row', alignItems: 'flex-start' },
+  detailText: { marginLeft: 12, fontSize: 16, color: '#495057' },
+  detailTextFlow: { fontSize: 16, color: '#495057', flex: 1, paddingRight: 10 },
+  addressDisplayRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  addressInput: { borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, padding: 12, fontSize: 14, minHeight: 60, textAlignVertical: 'top' },
+  addressActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
+  cancelBtn: { padding: 8, marginRight: 10 },
+  cancelBtnText: { color: '#6c757d', fontWeight: '600' },
+  saveBtn: { backgroundColor: '#007bff', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, justifyContent: 'center' },
+  saveBtnText: { color: '#fff', fontWeight: 'bold' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f3f5' },
+  logoutBtn: { borderBottomWidth: 0, marginTop: 8 },
+  actionText: { marginLeft: 12, fontSize: 16, color: '#343a40', fontWeight: '500' },
+  // Confirm Modal
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 30 },
+  confirmCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '100%' },
+  confirmTitle: { fontSize: 18, fontWeight: 'bold', color: '#343a40', marginBottom: 10 },
+  confirmMessage: { fontSize: 15, color: '#6c757d', lineHeight: 22, marginBottom: 24 },
+  confirmActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
+  cancelModalBtn: { paddingHorizontal: 16, paddingVertical: 10 },
+  cancelModalText: { color: '#6c757d', fontSize: 15, fontWeight: '600' },
+  confirmModalBtn: { backgroundColor: '#007bff', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  confirmModalText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 });

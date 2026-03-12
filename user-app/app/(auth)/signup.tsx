@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../../src/services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../../src/components/Toast';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -17,12 +18,12 @@ export default function SignupScreen() {
 
   const handleRequestOtp = async () => {
     if (!name || !email || !phone || !address || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showToast({ type: 'error', title: 'Error', message: 'Please fill in all fields' });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showToast({ type: 'error', title: 'Error', message: 'Passwords do not match' });
       return;
     }
 
@@ -30,14 +31,14 @@ export default function SignupScreen() {
       setLoading(true);
       await apiClient.post('/auth/citizen/reqOtp', { email });
       
-      // Navigate to OTP screen and pass user data as params
       router.push(`/(auth)/otp?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&address=${encodeURIComponent(address)}&password=${encodeURIComponent(password)}`);
       
     } catch (error: any) {
-      Alert.alert(
-        'Failed to request OTP', 
-        error.response?.data?.message || 'Something went wrong. Please try again.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Failed to Request OTP',
+        message: error.response?.data?.message || 'Something went wrong. Please try again.',
+      });
     } finally {
       setLoading(false);
     }

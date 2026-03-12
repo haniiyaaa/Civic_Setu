@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams, Redirect } from 'expo-router';
 import { apiClient } from '../../src/services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../../src/components/Toast';
 
 export default function OtpVerificationScreen() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function OtpVerificationScreen() {
 
   const handleVerify = async () => {
     if (otp.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      showToast({ type: 'error', title: 'Error', message: 'Please enter a valid 6-digit OTP' });
       return;
     }
 
@@ -35,13 +36,15 @@ export default function OtpVerificationScreen() {
 
       await apiClient.post('/auth/citizen/verifyOtp', payload);
       
-      router.replace('/(auth)/login');
+      showToast({ type: 'success', title: 'Account Created!', message: 'Please log in to continue.' });
+      setTimeout(() => router.replace('/(auth)/login'), 1500);
       
     } catch (error: any) {
-      Alert.alert(
-        'Verification Failed', 
-        error.response?.data?.message || 'Invalid OTP or server error.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Verification Failed',
+        message: error.response?.data?.message || 'Invalid OTP or server error.',
+      });
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,7 @@ export default function OtpVerificationScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.verifyButtonText}>Verify & Create Account</Text>
+            <Text style={styles.verifyButtonText}>Verify &amp; Create Account</Text>
           )}
         </TouchableOpacity>
 

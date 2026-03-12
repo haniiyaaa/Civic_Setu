@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '../src/context/AuthContext';
+import { ToastProvider } from '../src/components/Toast';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -22,6 +23,8 @@ function RootLayoutNav() {
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
+      {/* Custom Toast overlay - renders on top of everything */}
+      <ToastProvider />
     </ThemeProvider>
   );
 }

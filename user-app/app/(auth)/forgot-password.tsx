@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../../src/services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../../src/components/Toast';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function ForgotPasswordScreen() {
 
   const handleRequestOtp = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      showToast({ type: 'error', title: 'Error', message: 'Please enter your email address' });
       return;
     }
 
@@ -20,17 +21,18 @@ export default function ForgotPasswordScreen() {
       setLoading(true);
       await apiClient.post('/auth/forgotPass/reqOtp', { email });
       
-      Alert.alert('Success', 'OTP sent to your email.');
+      showToast({ type: 'success', title: 'OTP Sent', message: 'Check your email for the code.' });
       router.push({
         pathname: '/(auth)/reset-password',
         params: { email }
       });
       
     } catch (error: any) {
-      Alert.alert(
-        'Failed', 
-        error.response?.data?.message || 'Could not find the user or unable to send email.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Request Failed',
+        message: error.response?.data?.message || 'Could not find user or unable to send email.',
+      });
     } finally {
       setLoading(false);
     }

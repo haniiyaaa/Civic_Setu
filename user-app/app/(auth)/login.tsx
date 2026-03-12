@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { apiClient } from '../../src/services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../../src/components/Toast';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showToast({ type: 'error', title: 'Error', message: 'Please fill in all fields' });
       return;
     }
 
@@ -26,14 +27,14 @@ export default function LoginScreen() {
       const { token, user } = response.data;
       await login(token, user);
       
-      // Explicitly navigate to the map/home since global auth effects were disabled for Android compatibility
       router.replace('/(tabs)');
       
     } catch (error: any) {
-      Alert.alert(
-        'Login Failed', 
-        error.response?.data?.message || 'Check your credentials and try again.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Login Failed',
+        message: error.response?.data?.message || 'Check your credentials and try again.',
+      });
     } finally {
       setLoading(false);
     }

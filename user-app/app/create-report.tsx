@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { apiClient } from '../src/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../src/components/Toast';
 
 const CATEGORIES = [
   'Road Damage',
@@ -26,12 +27,13 @@ export default function CreateReportScreen() {
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mediaPickerVisible, setMediaPickerVisible] = useState(false);
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Allow location access to submit a report.');
+        showToast({ type: 'error', title: 'Permission Denied', message: 'Allow location access to submit a report.' });
         return;
       }
       let locationReq = await Location.getCurrentPositionAsync({});
@@ -40,12 +42,10 @@ export default function CreateReportScreen() {
         lng: locationReq.coords.longitude
       });
       
-      // Reverse geocode to get an address string optionally
       try {
         let geocode = await Location.reverseGeocodeAsync(locationReq.coords);
         if (geocode.length > 0) {
           const addr = geocode[0];
-          // Filter out null/undefined values and join with comma
           const fullAddress = [
             addr.name, 
             addr.street, 
@@ -54,7 +54,6 @@ export default function CreateReportScreen() {
             addr.region, 
             addr.postalCode
           ].filter(Boolean).join(', ');
-          
           setAddress(fullAddress || 'Unknown Location');
         }
       } catch (err) {}
@@ -63,7 +62,8 @@ export default function CreateReportScreen() {
 
   const pickImage = async (useCamera = false) => {
     if (images.length >= 5) {
-      Alert.alert('Limit Reached', 'You can only upload up to 5 images.');
+      showToast({ type: 'info', title: 'Limit Reached', message: 'You can only upload up to 5 images.' });
+      setMediaPickerVisible(false);
       return;
     }
     
@@ -77,7 +77,8 @@ export default function CreateReportScreen() {
     if (useCamera) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Camera access is required to take photos.');
+        showToast({ type: 'error', title: 'Permission Denied', message: 'Camera access is required to take photos.' });
+        setMediaPickerVisible(false);
         return;
       }
       result = await ImagePicker.launchCameraAsync(options);
@@ -85,21 +86,10 @@ export default function CreateReportScreen() {
       result = await ImagePicker.launchImageLibraryAsync(options);
     }
 
+    setMediaPickerVisible(false);
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImages([...images, result.assets[0].uri]);
     }
-  };
-
-  const handleAddMedia = () => {
-    Alert.alert(
-      'Add Photo',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: () => pickImage(true) },
-        { text: 'Choose from Gallery', onPress: () => pickImage(false) },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
   };
 
   const removeImage = (index: number) => {
@@ -108,7 +98,7 @@ export default function CreateReportScreen() {
 
   const handleSubmit = async () => {
     if (!description || !category || !location) {
-      Alert.alert('Error', 'Please provide a description, category, and ensure location is active.');
+      showToast({ type: 'error', title: 'Error', message: 'Please provide a description, category, and ensure location is active.' });
       return;
     }
 
@@ -130,25 +120,22 @@ export default function CreateReportScreen() {
           name: fileName,
           type: `image/${fileExt}`
         } as unknown as Blob); 
-        // React Native FormData accepts an object with uri, name, type
       });
 
       await apiClient.post('/report/citizen/reportupload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      Alert.alert('Success', 'Report submitted successfully!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      showToast({ type: 'success', title: 'Report Submitted!', message: 'Your civic issue has been reported.' });
+      setTimeout(() => router.back(), 1500);
       
     } catch (error: any) {
       console.error(error.response?.data);
-      Alert.alert(
-        'Failed to Submit', 
-        error.response?.data?.message || 'Could not upload your report.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Failed to Submit',
+        message: error.response?.data?.message || 'Could not upload your report.',
+      });
     } finally {
       setLoading(false);
     }
@@ -195,7 +182,7 @@ export default function CreateReportScreen() {
           ))}
           
           {images.length < 5 && (
-            <TouchableOpacity style={styles.addImageBtn} onPress={handleAddMedia}>
+            <TouchableOpacity style={styles.addImageBtn} onPress={() => setMediaPickerVisible(true)}>
               <Ionicons name="camera" size={32} color="#6c757d" />
               <Text style={styles.addImageText}>Add Photo</Text>
             </TouchableOpacity>
@@ -222,117 +209,60 @@ export default function CreateReportScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* Custom media picker modal instead of Alert */}
+      <Modal
+        visible={mediaPickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMediaPickerVisible(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setMediaPickerVisible(false)}>
+          <View style={styles.mediaPickerCard}>
+            <Text style={styles.mediaPickerTitle}>Add Photo</Text>
+            <TouchableOpacity style={styles.mediaPickerOption} onPress={() => pickImage(true)}>
+              <Ionicons name="camera" size={22} color="#007bff" />
+              <Text style={styles.mediaPickerOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.mediaPickerOption} onPress={() => pickImage(false)}>
+              <Ionicons name="images" size={22} color="#007bff" />
+              <Text style={styles.mediaPickerOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.mediaPickerOption, { borderBottomWidth: 0 }]} onPress={() => setMediaPickerVisible(false)}>
+              <Ionicons name="close" size={22} color="#6c757d" />
+              <Text style={[styles.mediaPickerOptionText, { color: '#6c757d' }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  categoryContainer: {
-    marginBottom: 8,
-  },
-  categoryBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#e9ecef',
-    marginRight: 10,
-  },
-  categoryBadgeActive: {
-    backgroundColor: '#007bff',
-  },
-  categoryText: {
-    color: '#495057',
-    fontWeight: '600',
-  },
-  categoryTextActive: {
-    color: '#fff',
-  },
-  textArea: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: 'top',
-  },
-  imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 8,
-  },
-  imageWrapper: {
-    position: 'relative',
-  },
-  thumbnail: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-  },
-  removeImageBtn: {
-    position: 'absolute',
-    top: -10,
-    right: -10,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-  },
-  addImageBtn: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addImageText: {
-    color: '#6c757d',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e9ecef',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  locationText: {
-    marginLeft: 8,
-    color: '#495057',
-    fontSize: 14,
-    flex: 1,
-  },
-  submitBtn: {
-    backgroundColor: '#28a745',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  }
+  container: { flex: 1, backgroundColor: '#fff' },
+  scrollContent: { padding: 16, paddingBottom: 40 },
+  label: { fontSize: 16, fontWeight: 'bold', color: '#343a40', marginBottom: 8, marginTop: 16 },
+  categoryContainer: { marginBottom: 8 },
+  categoryBadge: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#e9ecef', marginRight: 10 },
+  categoryBadgeActive: { backgroundColor: '#007bff' },
+  categoryText: { color: '#495057', fontWeight: '600' },
+  categoryTextActive: { color: '#fff' },
+  textArea: { backgroundColor: '#f8f9fa', borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, padding: 12, fontSize: 16, minHeight: 120, textAlignVertical: 'top' },
+  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
+  imageWrapper: { position: 'relative' },
+  thumbnail: { width: 100, height: 100, borderRadius: 8 },
+  removeImageBtn: { position: 'absolute', top: -10, right: -10, backgroundColor: '#fff', borderRadius: 12 },
+  addImageBtn: { width: 100, height: 100, borderRadius: 8, backgroundColor: '#f8f9fa', borderWidth: 1, borderColor: '#ced4da', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  addImageText: { color: '#6c757d', fontSize: 12, marginTop: 4 },
+  locationContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9ecef', padding: 12, borderRadius: 8, marginTop: 24, marginBottom: 24 },
+  locationText: { marginLeft: 8, color: '#495057', fontSize: 14, flex: 1 },
+  submitBtn: { backgroundColor: '#28a745', padding: 16, borderRadius: 8, alignItems: 'center' },
+  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  // Media picker modal
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  mediaPickerCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+  mediaPickerTitle: { fontSize: 18, fontWeight: 'bold', color: '#343a40', marginBottom: 16, textAlign: 'center' },
+  mediaPickerOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f3f5' },
+  mediaPickerOptionText: { fontSize: 16, marginLeft: 14, color: '#343a40', fontWeight: '500' },
 });

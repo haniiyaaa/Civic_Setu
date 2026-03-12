@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams, Redirect } from 'expo-router';
 import { apiClient } from '../../src/services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showToast } from '../../src/components/Toast';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -19,12 +20,12 @@ export default function ResetPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (otp.length !== 6 || newPassword.length < 6) {
-      Alert.alert('Error', 'Ensure you have a 6-digit OTP and password is at least 6 characters.');
+      showToast({ type: 'error', title: 'Error', message: 'OTP must be 6 digits; password minimum 6 characters.' });
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      Alert.alert('Error', 'The new passwords do not match.');
+      showToast({ type: 'error', title: 'Error', message: 'The new passwords do not match.' });
       return;
     }
 
@@ -36,13 +37,15 @@ export default function ResetPasswordScreen() {
         newPassword 
       });
       
-      router.replace('/(auth)/login');
+      showToast({ type: 'success', title: 'Password Changed!', message: 'Please log in with your new password.' });
+      setTimeout(() => router.replace('/(auth)/login'), 1500);
       
     } catch (error: any) {
-      Alert.alert(
-        'Failed', 
-        error.response?.data?.message || 'Invalid OTP or unable to reset password.'
-      );
+      showToast({
+        type: 'error',
+        title: 'Reset Failed',
+        message: error.response?.data?.message || 'Invalid OTP or unable to reset password.',
+      });
     } finally {
       setLoading(false);
     }

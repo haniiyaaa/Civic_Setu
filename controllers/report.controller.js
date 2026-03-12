@@ -92,7 +92,7 @@ export const getMyReports = async (req, res) => {
     }
 
     const reports = await Report.find(query)
-      .select("description category status media address createdAt")
+      .select("description category status media address createdAt resolution location")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -172,7 +172,7 @@ export const deleteReport = async (req, res) => {
       }
 
     }
-
+ 
     // delete report from DB
     await Report.findByIdAndDelete(reportId);
 

@@ -19,6 +19,9 @@ router.post("/citizen/reportupload",authMiddleware,rateLimitReports,upload.array
 //for admin to view all reports
 router.get("/admin/reports", authMiddleware, getAllReports);
 
+//for citizens to view all reports on map
+router.get("/citizen/allreports", authMiddleware, getAllReports);
+
 router.get("/citizen/myreports", authMiddleware, getMyReports);
 
 router.get("/admin/getReportDetails/:reportId",authMiddleware,getReportDetails);

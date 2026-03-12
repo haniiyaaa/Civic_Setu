@@ -1,13 +1,9 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// Assuming the expo host machine is at 192.168.0.110 and backend port is 5000
+// Production backend deployed on Render
 const getBaseUrl = () => {
-  if (Platform.OS === 'android') {
-    return 'http://192.168.0.110:5000/api'; 
-  }
-  return 'http://192.168.0.110:5000/api';
+  return 'https://civic-setu.onrender.com/api';
 };
 
 export const apiClient = axios.create({

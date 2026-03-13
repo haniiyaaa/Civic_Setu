@@ -103,6 +103,7 @@ export const verifyOtp = async (req, res) => {
     const { name, email, phone, address, password, otp } = req.body;
     const { success, error } = verifyOtpSchema.safeParse({ name, email, phone, address, password, otp });
     if (!success) {
+      console.log(error);
       return res.status(400).json({
         message: error?.errors?.[0]?.message || "Validation error"
       });
@@ -230,10 +231,12 @@ export const verifyAdminOtp = async (req, res) => {
         const { success, error } = verifyOtpSchema.safeParse({ name, email, phone, address, password, otp });
 
     if (!success) {
+      console.log(error);
       return res.status(400).json({
-        message: error.errors[0].message
+        message: error?.errors?.[0]?.message || "Validation error"
       });
     }
+
 
     const otpRecord = await Otp.findOne({ email });
 
@@ -415,8 +418,9 @@ export const verifyPasswordResetOtp = async (req, res) => {
     const { success, error } = newpass.safeParse({ email, otp, newPassword });
 
     if (!success) {
+      console.log(error);
       return res.status(400).json({
-        message: error.errors[0].message
+        message: error?.errors?.[0]?.message || "Validation error"
       });
     }
 

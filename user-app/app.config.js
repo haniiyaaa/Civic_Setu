@@ -10,6 +10,7 @@ export default {
     newArchEnabled: false,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.civicsetu.userapp",
     },
     android: {
       package: "com.civicsetu.userapp",

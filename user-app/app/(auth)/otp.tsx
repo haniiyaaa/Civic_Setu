@@ -61,6 +61,7 @@ export default function OtpVerificationScreen() {
         <TextInput
           style={styles.input}
           placeholder="Enter OTP"
+          placeholderTextColor="#9ca3af"
           keyboardType="numeric"
           maxLength={6}
           value={otp}

@@ -60,6 +60,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Full Name"
+              placeholderTextColor="#9ca3af"
               value={name}
               onChangeText={setName}
             />
@@ -67,6 +68,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Email Address"
+              placeholderTextColor="#9ca3af"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -76,6 +78,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Phone Number"
+              placeholderTextColor="#9ca3af"
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
@@ -84,6 +87,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Address"
+              placeholderTextColor="#9ca3af"
               value={address}
               onChangeText={setAddress}
             />
@@ -91,6 +95,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              placeholderTextColor="#9ca3af"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -99,6 +104,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="Confirm Password"
+              placeholderTextColor="#9ca3af"
               secureTextEntry
               value={confirmPassword}
               onChangeText={setConfirmPassword}

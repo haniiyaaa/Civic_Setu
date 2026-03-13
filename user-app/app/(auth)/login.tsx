@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, BackHandler } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { apiClient } from '../../src/services/api';
@@ -13,6 +13,16 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Prevent back navigation from Login screen — exit app instead
+  useEffect(() => {
+    const onBackPress = () => {
+      BackHandler.exitApp();
+      return true;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -51,6 +61,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email Address"
+          placeholderTextColor="#9ca3af"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -60,6 +71,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#9ca3af"
           secureTextEntry
           value={password}
           onChangeText={setPassword}

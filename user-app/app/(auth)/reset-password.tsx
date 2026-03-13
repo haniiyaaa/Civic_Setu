@@ -62,6 +62,7 @@ export default function ResetPasswordScreen() {
         <TextInput
           style={[styles.input, styles.otpInput]}
           placeholder="Enter OTP"
+          placeholderTextColor="#9ca3af"
           keyboardType="numeric"
           maxLength={6}
           value={otp}
@@ -71,6 +72,7 @@ export default function ResetPasswordScreen() {
         <TextInput
           style={styles.input}
           placeholder="New Password"
+          placeholderTextColor="#9ca3af"
           secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
@@ -79,6 +81,7 @@ export default function ResetPasswordScreen() {
         <TextInput
           style={styles.input}
           placeholder="Confirm New Password"
+          placeholderTextColor="#9ca3af"
           secureTextEntry
           value={confirmNewPassword}
           onChangeText={setConfirmNewPassword}

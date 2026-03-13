@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     letterSpacing: 8,
+    color: '#212529',
   },
   verifyButton: {
     backgroundColor: '#28a745',

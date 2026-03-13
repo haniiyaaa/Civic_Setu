@@ -7,7 +7,7 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "userapp",
     userInterfaceStyle: "automatic",
-    newArchEnabled: false,
+    newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.civicsetu.userapp",

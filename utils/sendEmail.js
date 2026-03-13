@@ -1,29 +1,43 @@
-//const nodemailer = require("nodemailer");
-import nodemailer from "nodemailer";
+// utils/sendEmail.js
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+import dotenv from 'dotenv';
 
-const sendEmail = async (email, otp) => {
+dotenv.config();
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
+// Initialize Brevo client
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Email Verification OTP",
-    html: `
-      <h2>Email Verification</h2>
-      <p>Your OTP for verification is:</p>
-      <h3>${otp}</h3>
-      <p>This OTP will expire in 5 minutes.</p>
-    `
-  };
+const emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
-  await transporter.sendMail(mailOptions);
+/**
+ * Send transactional email via Brevo
+ * @param {string} to - Recipient email
+ * @param {string} subject - Email subject
+ * @param {string} message - Email message content
+ */
+export const sendEmail = async (to, subject, message) => {
+  try {
+    const response = await emailApi.sendTransacEmail({
+      sender: {
+        email: "ajy020605@gmail.com",
+        name: "Civic Setu"
+      },
+      to: [{ email: to }],
+      subject: subject,
+      textContent: message, // plain-text fallback
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <h2 style="color: #2E86C1;">${subject}</h2>
+          <p>${message}</p>
+          <p>Regards,<br/><strong>Civic Setu Team</strong></p>
+        </div>
+      ` // HTML email content
+    });
+
+    console.log("Email request sent. Brevo response:", response);
+  } catch (error) {
+    console.error("Email failed:", error.response?.body || error);
+  }
 };
-
-export default sendEmail;

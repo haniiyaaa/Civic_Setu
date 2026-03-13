@@ -3,7 +3,7 @@ import User from "../models/user.js";
 import Otp from "../models/otpSchema.js";
 
 import generateOTP from "../utils/otp.js";
-import sendEmail from "../utils/sendEmail.js";  
+import {sendEmail} from "../utils/sendEmail.js";  
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { email, z } from "zod";

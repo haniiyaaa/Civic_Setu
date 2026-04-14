@@ -20,7 +20,7 @@ connectDB();
 
 const app = express();
 
-// ================= Middleware =================
+
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
@@ -28,12 +28,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/userProfile", userProfileRoutes);
 
-// ================= Routes =================
+
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Civic Setu API is running" });
 });
 
-// ================= Server =================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

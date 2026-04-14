@@ -1,4 +1,4 @@
-//const User = require("../models/user");
+
 import User from "../models/user.js";
 import Otp from "../models/otpSchema.js";
 
@@ -7,15 +7,7 @@ import {sendEmail} from "../utils/sendEmail.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { email, z } from "zod";
-// const Otp = require("../models/otpSchema");
 
-// const generateOTP = require("../utils/otp");
-// const sendEmail = require("../utils/sendEmail");
-
-// const bcrypt = require("bcryptjs");
-// const jwt = require("jsonwebtoken");
-
-// const z = require("zod");
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).max(100)

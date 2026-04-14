@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "admin-dashboard/package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/admin-dashboard/$1"
+    }
+  ]
+}

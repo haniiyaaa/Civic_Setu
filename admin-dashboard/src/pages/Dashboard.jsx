@@ -10,6 +10,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Cell,
 } from 'recharts'
 import dayjs from 'dayjs'
 import { fetchAllReports } from '../services/reportService'
@@ -48,6 +49,8 @@ export default function Dashboard() {
     return reports.filter((r) => r.status !== 'Resolved').length
   }, [reports])
 
+  const pieColors = ['#f59e0b', '#3b82f6', '#10b981']
+
   const pieData = useMemo(() => {
     const counts = { Pending: 0, 'In Progress': 0, Resolved: 0 }
     for (const r of reports) counts[r.status] = (counts[r.status] || 0) + 1
@@ -78,6 +81,8 @@ export default function Dashboard() {
       return row
     })
   }, [reports])
+
+
 
   const categoryColors = [
     '#0f172a',
@@ -130,7 +135,11 @@ export default function Dashboard() {
                   innerRadius={55}
                   outerRadius={90}
                   paddingAngle={3}
-                />
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
               </PieChart>
             </ResponsiveContainer>
           </div>

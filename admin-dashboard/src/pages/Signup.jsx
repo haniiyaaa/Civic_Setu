@@ -82,7 +82,7 @@ export default function Signup() {
           Create Admin Account
         </div>
         <div className="mt-1 text-sm text-slate-600">
-          Admin signup uses a secret key + email OTP (as required by the backend).
+          Admin signup uses a secret key + email OTP.
         </div>
 
         {step === 1 ? (
